@@ -90,6 +90,10 @@ func TestStore(t *testing.T) {
 	person.Name = "test::test"
 	err = db.Store(context.Background(), person)
 	assert.Error(t, err)
+
+	person.Name = ""
+	err = db.Store(context.Background(), person)
+	assert.Error(t, err)
 }
 
 func TestGetObjectByID(t *testing.T) {
@@ -108,13 +112,17 @@ func TestGetObjectByID(t *testing.T) {
 	// Happy case
 	obj, err := db.GetObjectByID(context.Background(), person.GetID())
 	assert.NoError(t, err)
-	_, ok := obj.(*Person)
+	per, ok := obj.(*Person)
 	assert.Equal(t, true, ok)
+	assert.Equal(t, person.Name, per.Name)
+	assert.Equal(t, person.Birthday, per.Birthday)
 
 	obj, err = db.GetObjectByID(context.Background(), animal.GetID())
 	assert.NoError(t, err)
-	_, ok = obj.(*Animal)
+	res, ok := obj.(*Animal)
 	assert.Equal(t, true, ok)
+	assert.Equal(t, animal.Name, res.Name)
+	assert.Equal(t, animal.Type, res.Type)
 
 	// Test with empty id
 	_, err = db.GetObjectByID(context.Background(), "")
@@ -151,6 +159,10 @@ func TestGetObjectsByName(t *testing.T) {
 	objs, err = db.GetObjectsByName(context.Background(), aName)
 	assert.NoError(t, err)
 	assert.Equal(t, 5, len(objs))
+
+	// Empty name
+	_, err = db.GetObjectsByName(context.Background(), "")
+	assert.Error(t, err)
 
 	// Unknown name
 	objs, err = db.GetObjectsByName(context.Background(), "unknown")
@@ -217,4 +229,8 @@ func TestDeleteObject(t *testing.T) {
 	// Try to get the object
 	_, err = db.GetObjectByID(context.Background(), person.GetID())
 	assert.Error(t, err)
+
+	// Delete unknown object
+	err = db.DeleteObject(context.Background(), "unknown")
+	assert.NoError(t, err)
 }

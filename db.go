@@ -80,6 +80,13 @@ func NewRedisDB(addr, password string) (*RedisDB, error) {
 }
 
 func (db *RedisDB) Store(ctx context.Context, object Object) error {
+	if object.GetName() == "" {
+		return errors.New("missing object name")
+	}
+	if object.GetKind() == "" {
+		return errors.New("missing object kind")
+	}
+
 	id := uuid.New().String()
 
 	value, err := json.Marshal(object)
