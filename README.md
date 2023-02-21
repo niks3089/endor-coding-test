@@ -7,4 +7,4 @@ The reason why I am not using just the `id` which is an unique `uuid` is the req
 
 I am also Storing inside the redis only iff the key has the count of 2 `::` delimter. This is to avoid storing the object if id or name has `::`. I am also using `kind` as a filter to decide the kind of object to initialize to unmarshal the object into after reading from redis.
 
-The tests are idempotent and can be triggered manually by going to (this page)[https://github.com/niks3089/endor-coding-test/actions/workflows/master.yml] and triggering the workflow. The workflow spins up a redis server instance and runs the tests aginast it.
+The tests are idempotent and can be triggered manually by going to [this page](https://github.com/niks3089/endor-coding-test/actions/workflows/master.yml) and triggering the workflow. The workflow spins up a redis server instance and runs the tests aginast it.
