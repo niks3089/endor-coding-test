@@ -24,7 +24,7 @@ jobs:
       run: redis-server &
 
     - name: Run tests
-      run: go test ./...
+      run: go test -v ./...
 
     - name: Clean up Redis
       run: |

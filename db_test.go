@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"testing"
@@ -9,6 +10,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func getEnv(key, fallback string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		value = fallback
+	}
+	return value
+}
 
 func randomString(length int) string {
 	letterBytes := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -143,7 +152,12 @@ func TestGetObjectsByName(t *testing.T) {
 	person := getPerson(pName)
 	animal := getAnimal(aName)
 
+	var ap = make(map[string]int)
+
 	for i := 0; i < 5; i++ {
+		ap[person.Name]++
+		ap[animal.Name]++
+
 		err = db.Store(context.Background(), person)
 		assert.NoError(t, err)
 
@@ -156,9 +170,19 @@ func TestGetObjectsByName(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 5, len(objs))
 
+	for _, obj := range objs {
+		ap[obj.GetName()]--
+	}
+	assert.Equal(t, 0, ap[pName])
+
 	objs, err = db.GetObjectsByName(context.Background(), aName)
 	assert.NoError(t, err)
 	assert.Equal(t, 5, len(objs))
+
+	for _, obj := range objs {
+		ap[obj.GetName()]--
+	}
+	assert.Equal(t, 0, ap[aName])
 
 	// Empty name
 	_, err = db.GetObjectsByName(context.Background(), "")
@@ -182,7 +206,16 @@ func TestListObjects(t *testing.T) {
 	person := getPerson(pName)
 	animal := getAnimal(aName)
 
+	var pMap = make(map[string]bool)
+	var aMap = make(map[string]bool)
+
 	for i := 0; i < 5; i++ {
+		person.Name = pName + fmt.Sprintf("%d", i)
+		pMap[person.Name] = true
+
+		animal.Name = pName + fmt.Sprintf("%d", i)
+		aMap[animal.Name] = true
+
 		err = db.Store(context.Background(), person)
 		assert.NoError(t, err)
 
@@ -195,9 +228,19 @@ func TestListObjects(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 5, len(objs))
 
+	for _, obj := range objs {
+		delete(pMap, obj.GetName())
+	}
+	assert.Equal(t, 0, len(pMap))
+
 	objs, err = db.ListObjects(context.Background(), animal.GetKind())
 	assert.NoError(t, err)
 	assert.Equal(t, 5, len(objs))
+
+	for _, obj := range objs {
+		delete(aMap, obj.GetName())
+	}
+	assert.Equal(t, 0, len(aMap))
 
 	// Unknown name
 	objs, err = db.ListObjects(context.Background(), "unknown")

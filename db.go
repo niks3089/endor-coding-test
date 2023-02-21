@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/go-redis/redis"
@@ -30,14 +29,6 @@ type RedisDB struct {
 	client *redis.Client
 }
 
-func getEnv(key, fallback string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		value = fallback
-	}
-	return value
-}
-
 func (db *RedisDB) listObjects(pattern string) ([]Object, error) {
 	var objects []Object
 	var object Object
@@ -56,7 +47,7 @@ func (db *RedisDB) listObjects(pattern string) ([]Object, error) {
 		if err != nil {
 			return nil, err
 		}
-		object, err = extractObject(keys[0], value)
+		object, err = extractObject(key, value)
 		if err != nil {
 			return nil, err
 		}
