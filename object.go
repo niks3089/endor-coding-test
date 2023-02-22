@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"reflect"
 	"regexp"
 	"strings"
@@ -112,4 +115,82 @@ func extractObject(key, value string) (Object, error) {
 		return nil, err
 	}
 	return object, nil
+}
+
+func main() {
+	// Quick test of all the functions
+
+	ctx := context.Background()
+	animal := Animal{Name: "tiger", Type: "wild-animal", OwnerID: "alice"}
+	person1 := Person{Name: "alice", LastName: "jordon"}
+	person2 := Person{Name: "alice", LastName: "macy"}
+
+	db, err := NewRedisDB("127.0.0.1:6379", "")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	// We flush here for clean slate
+	if _, err := db.client.FlushAll().Result(); err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	// Store 2 persons and 1 animal
+	if err := db.Store(ctx, &animal); err != nil {
+		log.Fatalf(err.Error())
+	}
+	if err := db.Store(ctx, &person1); err != nil {
+		log.Fatalf(err.Error())
+	}
+	if err := db.Store(ctx, &person2); err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	// Get them by name
+	tiger, err := db.GetObjectsByName(ctx, "tiger")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	persons, err := db.GetObjectsByName(ctx, "alice")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	fmt.Println("Listing persons:")
+	pKind := persons[0].GetKind()
+	aKind := tiger[0].GetKind()
+	persons, err = db.ListObjects(ctx, pKind)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	for i, alice := range persons {
+		fmt.Println(i, "Person object: ", alice)
+		err = db.DeleteObject(ctx, alice.GetID())
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		fmt.Println(i, "Deleted person: ", alice)
+	}
+
+	tig, err := db.GetObjectByID(ctx, tiger[0].GetID())
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fmt.Println("Getting animal by id:", tig)
+	err = db.DeleteObject(ctx, tig.GetID())
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	persons, err = db.ListObjects(ctx, pKind)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fmt.Println("After deletion, total persons:", len(persons))
+
+	animals, err := db.ListObjects(ctx, aKind)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fmt.Println("After deletion, total animals:", len(animals))
 }

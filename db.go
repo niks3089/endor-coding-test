@@ -79,15 +79,17 @@ func (db *RedisDB) Store(ctx context.Context, object Object) error {
 	}
 
 	id := uuid.New().String()
+	object.SetID(id)
 
 	value, err := json.Marshal(object)
 	if err != nil {
 		return err
 	}
 
-	object.SetID(id)
+	// key is combination of id, name & kind.
 	key := id + "::" + object.GetName() + "::" + object.GetKind()
 
+	// We don't want to store if the number of delimiters is greater than expected
 	if strings.Count(key, "::") != 2 {
 		return errors.New("unexpected restricted delimiter in the key")
 	}
